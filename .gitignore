@@ -1,0 +1,31 @@
+# Dependency directories
+node_modules/
+
+# Production build directories
+dist/
+build/
+
+# Ephemeral/Temp runtime files
+backend/temp/
+*.log
+npm-debug.log*
+
+# Sensitive environmental credentials
+.env
+.env.local
+.env.*.local
+
+# Secrets/Config directories (for raw config files/keys)
+secrets/
+config/
+
+# IDE and System files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

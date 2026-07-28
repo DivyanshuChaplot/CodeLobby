@@ -1,0 +1,252 @@
+/* CodeLobby - Strict Yellow & White CSS Design System (White Background Version) */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+:root {
+  --bg-dark: #ffffff;
+  --bg-card: #f9f9f9;
+  --bg-card-hover: #f0f0f0;
+  --color-yellow: #ffd600; /* Vibrant yellow/gold for high contrast on white */
+  --color-yellow-dark: #ccb300;
+  --color-yellow-glow: rgba(255, 214, 0, 0.2);
+  --color-yellow-glow-strong: rgba(255, 214, 0, 0.4);
+  --color-white: #111111; /* Mapped to dark charcoal for normal text on white background! */
+  --color-white-muted: #555555;
+  --color-border: #ffd600; /* Yellow border lines */
+  --color-border-soft: #e5e5e5; /* Soft light-grey borders for compartments */
+  --font-sans: 'Outfit', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::selection {
+  background-color: #c8f2d5 !important; /* Beautiful soft light green selection */
+  color: #111111 !important;
+}
+
+::-moz-selection {
+  background-color: #c8f2d5 !important;
+  color: #111111 !important;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--color-white);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  letter-spacing: -0.01em;
+}
+
+/* Custom Scrollbar - Cyber Yellow & Grey */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-yellow);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-white-muted);
+}
+
+/* Neon Glows and Cyber Borders */
+.cyber-border {
+  border: 2px solid var(--color-yellow);
+  box-shadow: 0 0 10px var(--color-yellow-glow);
+}
+
+.cyber-border-white {
+  border: 2px solid var(--color-white);
+}
+
+.cyber-glow {
+  text-shadow: 0 0 6px var(--color-yellow);
+}
+
+.cyber-button {
+  background: var(--color-yellow);
+  color: #000000; /* black text inside yellow button */
+  border: 2px solid var(--color-yellow);
+  padding: 0.6rem 1.2rem;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cyber-button:hover {
+  background: #000000;
+  color: var(--color-yellow);
+  border-color: #000000;
+  box-shadow: 0 0 15px var(--color-yellow-glow-strong);
+}
+
+.cyber-button-white {
+  background: transparent;
+  color: var(--color-white);
+  border: 2px solid var(--color-white);
+  padding: 0.6rem 1.2rem;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cyber-button-white:hover {
+  background: var(--color-white);
+  color: #ffffff; /* pure white text on dark background hover */
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.cyber-input {
+  background: #ffffff;
+  border: 2px solid var(--color-border-soft);
+  color: var(--color-white);
+  padding: 0.8rem 1rem;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  outline: none;
+  transition: var(--transition);
+  width: 100%;
+}
+
+.cyber-input:focus {
+  border-color: var(--color-yellow);
+  box-shadow: 0 0 10px var(--color-yellow-glow);
+}
+
+.cyber-select {
+  background: #ffffff;
+  border: 2px solid var(--color-yellow);
+  color: #000000; /* dark text for contrast */
+  padding: 0.4rem 0.8rem;
+  font-family: var(--font-sans);
+  outline: none;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.cyber-select option {
+  background: #ffffff;
+  color: #000000;
+}
+
+/* App Layout Utilities */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-dark);
+}
+
+.header {
+  height: 60px;
+  background: #ffffff;
+  border-bottom: 2px solid var(--color-yellow);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  z-index: 10;
+}
+
+.logo-text {
+  font-weight: 800;
+  font-size: 1.5rem;
+  color: #000000; /* black base */
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.logo-text span {
+  color: var(--color-yellow-dark); /* yellow lobby name */
+}
+
+/* Three-column Dashboard Grid */
+.workspace-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 260px 1.4fr 1fr; /* Left Sidebar, Center Workspace (spacious), Right Whiteboard */
+  overflow: hidden;
+  height: calc(100vh - 60px);
+}
+
+.sidebar-panel {
+  background: #ffffff;
+  border-right: 2px solid var(--color-border-soft);
+  display: grid;
+  grid-template-rows: 1fr 1fr; /* Top: CodeMap, Bottom: Chat */
+  overflow: hidden;
+}
+
+.whiteboard-panel {
+  background: #ffffff;
+  border-left: 2px solid var(--color-border-soft);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.workspace-center {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.tab-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* User Badge */
+.user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.8rem;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+/* Keyframe animations */
+@keyframes pulse-yellow {
+  0% {
+    box-shadow: 0 0 5px var(--color-yellow-glow);
+  }
+  50% {
+    box-shadow: 0 0 15px var(--color-yellow-glow-strong);
+  }
+  100% {
+    box-shadow: 0 0 5px var(--color-yellow-glow);
+  }
+}
+
+.pulse-yellow-effect {
+  animation: pulse-yellow 2s infinite ease-in-out;
+}
