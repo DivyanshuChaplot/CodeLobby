@@ -14,12 +14,19 @@ export default function WhiteboardContainer({ socket, roomId }) {
   const startPos = useRef({ x: 0, y: 0 });
   const [tempDrawingData, setTempDrawingData] = useState(null);
 
+  const strokesHistoryRef = useRef([]);
+
+  useEffect(() => {
+    strokesHistoryRef.current = strokesHistory;
+  }, [strokesHistory]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     
     // Fit canvas to parent container size
     const resizeCanvas = () => {
       const parent = canvas.parentElement;
+      if (!parent) return;
       const width = parent.clientWidth;
       const height = parent.clientHeight - 60; // Subtract control bar height
       canvas.width = width * 2;
@@ -33,7 +40,7 @@ export default function WhiteboardContainer({ socket, roomId }) {
       context.lineJoin = 'round';
       contextRef.current = context;
 
-      redrawStrokes(strokesHistory);
+      redrawStrokes(strokesHistoryRef.current);
     };
 
     resizeCanvas();
@@ -41,36 +48,42 @@ export default function WhiteboardContainer({ socket, roomId }) {
 
     // Socket Event listeners
     if (socket) {
-      socket.on('draw-stroke-update', (stroke) => {
+      const handleDrawStroke = (stroke) => {
         setStrokesHistory((prev) => {
           const updated = [...prev, stroke];
-          drawSingleStroke(contextRef.current, stroke);
           return updated;
         });
-      });
+        drawSingleStroke(contextRef.current, stroke);
+      };
 
-      socket.on('clear-canvas-update', () => {
+      const handleClearCanvas = () => {
         clearLocalCanvas();
         setStrokesHistory([]);
-      });
+      };
 
-      // Request current status
-      socket.on('room-init', (data) => {
+      const handleRoomInit = (data) => {
         if (data.canvasStrokes) {
           setStrokesHistory(data.canvasStrokes);
           redrawStrokes(data.canvasStrokes);
         }
-      });
+      };
+
+      socket.on('draw-stroke-update', handleDrawStroke);
+      socket.on('clear-canvas-update', handleClearCanvas);
+      socket.on('room-init', handleRoomInit);
+
+      return () => {
+        window.removeEventListener('resize', resizeCanvas);
+        socket.off('draw-stroke-update', handleDrawStroke);
+        socket.off('clear-canvas-update', handleClearCanvas);
+        socket.off('room-init', handleRoomInit);
+      };
     }
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
-      if (socket) {
-        socket.off('draw-stroke-update');
-        socket.off('clear-canvas-update');
-      }
     };
-  }, [socket, strokesHistory]);
+  }, [socket]);
 
   const drawSingleStroke = (ctx, stroke) => {
     if (!ctx) return;

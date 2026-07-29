@@ -29,13 +29,14 @@ export default function App() {
   const [localStream, setLocalStream] = useState(null);
   const [remoteStreams, setRemoteStreams] = useState({}); // socketId -> MediaStream
 
+  const socketRef = useRef(null);
   const localStreamRef = useRef(null);
   const peersRef = useRef({}); // socketId -> RTCPeerConnection
   const editorRef = useRef(null);
 
   // Start Media Call (Audio + Video)
   const startCall = async () => {
-    if (!socket || !session) return;
+    if (!socketRef.current || !session) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
       localStreamRef.current = stream;
@@ -44,7 +45,7 @@ export default function App() {
       setAudioMuted(false);
       setVideoCameraOff(false);
 
-      socket.emit('send-message', {
+      socketRef.current.emit('send-message', {
         roomId: session.roomId,
         message: '📹 Joined the lobby video call.'
       });
@@ -76,18 +77,18 @@ export default function App() {
     });
     peersRef.current = {};
 
-    if (socket && session) {
+    if (socketRef.current && session) {
       // Send leave call signal to all other peers in the room
       Object.keys(users).forEach((userId) => {
         if (userId !== myId) {
-          socket.emit('webrtc-signal', {
+          socketRef.current.emit('webrtc-signal', {
             targetSocketId: userId,
             signal: { type: 'leave-call' }
           });
         }
       });
 
-      socket.emit('send-message', {
+      socketRef.current.emit('send-message', {
         roomId: session.roomId,
         message: '🔇 Left the video call.'
       });
@@ -129,8 +130,8 @@ export default function App() {
     });
 
     peer.onicecandidate = (event) => {
-      if (event.candidate && socket) {
-        socket.emit('webrtc-signal', {
+      if (event.candidate && socketRef.current) {
+        socketRef.current.emit('webrtc-signal', {
           targetSocketId: targetUserId,
           signal: { type: 'candidate', candidate: event.candidate }
         });
@@ -146,8 +147,8 @@ export default function App() {
       peer.createOffer().then((offer) => {
         return peer.setLocalDescription(offer);
       }).then(() => {
-        if (socket) {
-          socket.emit('webrtc-signal', {
+        if (socketRef.current) {
+          socketRef.current.emit('webrtc-signal', {
             targetSocketId: targetUserId,
             signal: { type: 'offer', sdp: peer.localDescription }
           });
@@ -165,6 +166,7 @@ export default function App() {
     // Connect to local Node Express server
     const backendUrl = import.meta.env.VITE_BACKEND_URL || (window.location.port ? `${window.location.protocol}//${window.location.hostname}:5000` : window.location.origin);
     const newSocket = io(backendUrl);
+    socketRef.current = newSocket;
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
@@ -265,19 +267,6 @@ export default function App() {
     };
   }, [session]);
 
-  // Hook RTC signaling inside server to bridge signals
-  useEffect(() => {
-    if (!socket) return;
-    
-    socket.on('webrtc-signal-bridge', (data) => {
-      socket.emit('webrtc-signal-receive', data);
-    });
-
-    return () => {
-      socket.off('webrtc-signal-bridge');
-    };
-  }, [socket]);
-
   // Handle clicking AST Code Map items to jump user's editor line
   const handleSelectLine = (line) => {
     const editor = editorRef.current;
@@ -299,6 +288,7 @@ export default function App() {
     stopCall();
     setSession(null);
     setSocket(null);
+    socketRef.current = null;
     setCode('');
     setUsers({});
     setChatMessages([]);
