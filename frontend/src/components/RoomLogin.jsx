@@ -1,10 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Terminal, Users, Cpu } from 'lucide-react';
 
 export default function RoomLogin({ onJoin }) {
   const [username, setUsername] = useState('');
   const [roomId, setRoomId] = useState('');
   const [error, setError] = useState('');
+  const [loadedFromUrl, setLoadedFromUrl] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const roomParam = params.get('room') || params.get('roomId');
+    if (roomParam) {
+      setRoomId(roomParam.toLowerCase().replace(/[^a-z0-9_-]/g, ''));
+      setLoadedFromUrl(true);
+    }
+  }, []);
 
   const generateRoomId = () => {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -140,9 +150,23 @@ export default function RoomLogin({ onJoin }) {
               className="cyber-input"
               placeholder="Enter room ID or paste key..."
               value={roomId}
-              onChange={(e) => setRoomId(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
+              onChange={(e) => {
+                setRoomId(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''));
+                if (loadedFromUrl) setLoadedFromUrl(false);
+              }}
               style={{ border: '2px solid #e0e0e0', color: '#111111' }}
             />
+            {loadedFromUrl && (
+              <span style={{
+                fontSize: '0.75rem',
+                color: '#a38200',
+                fontWeight: 'bold',
+                display: 'inline-block',
+                marginTop: '0.3rem'
+              }}>
+                ✓ Room ID loaded automatically from invitation link!
+              </span>
+            )}
           </div>
 
           {error && (

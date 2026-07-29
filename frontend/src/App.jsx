@@ -77,6 +77,16 @@ export default function App() {
     peersRef.current = {};
 
     if (socket && session) {
+      // Send leave call signal to all other peers in the room
+      Object.keys(users).forEach((userId) => {
+        if (userId !== myId) {
+          socket.emit('webrtc-signal', {
+            targetSocketId: userId,
+            signal: { type: 'leave-call' }
+          });
+        }
+      });
+
       socket.emit('send-message', {
         roomId: session.roomId,
         message: '🔇 Left the video call.'
@@ -153,7 +163,8 @@ export default function App() {
     if (!session) return;
 
     // Connect to local Node Express server
-    const newSocket = io('http://localhost:5000');
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || (window.location.port ? `${window.location.protocol}//${window.location.hostname}:5000` : window.location.origin);
+    const newSocket = io(backendUrl);
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
@@ -206,6 +217,19 @@ export default function App() {
     // Handle incoming WebRTC signals
     newSocket.on('webrtc-signal-receive', async ({ senderSocketId, signal }) => {
       let peer = peersRef.current[senderSocketId];
+
+      if (signal.type === 'leave-call') {
+        if (peer) {
+          peer.close();
+          delete peersRef.current[senderSocketId];
+        }
+        setRemoteStreams((prev) => {
+          const next = { ...prev };
+          delete next[senderSocketId];
+          return next;
+        });
+        return;
+      }
 
       if (!peer && localStreamRef.current) {
         peer = initiatePeerConnection(senderSocketId, localStreamRef.current, false);
@@ -265,7 +289,8 @@ export default function App() {
   };
 
   const copyRoomLink = () => {
-    navigator.clipboard.writeText(session.roomId);
+    const inviteUrl = `${window.location.origin}?room=${session.roomId}`;
+    navigator.clipboard.writeText(inviteUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
