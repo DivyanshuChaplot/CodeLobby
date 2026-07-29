@@ -165,7 +165,8 @@ export default function App() {
     if (!session) return;
 
     // Connect to local Node Express server
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || (window.location.port ? `${window.location.protocol}//${window.location.hostname}:5000` : window.location.origin);
+    const autoDetectedUrl = import.meta.env.VITE_BACKEND_URL || (window.location.port ? `${window.location.protocol}//${window.location.hostname}:5000` : window.location.origin);
+    const backendUrl = session.customBackendUrl || autoDetectedUrl;
     const newSocket = io(backendUrl);
     socketRef.current = newSocket;
     setSocket(newSocket);

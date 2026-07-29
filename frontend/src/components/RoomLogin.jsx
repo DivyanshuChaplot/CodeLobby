@@ -6,6 +6,42 @@ export default function RoomLogin({ onJoin }) {
   const [roomId, setRoomId] = useState('');
   const [error, setError] = useState('');
   const [loadedFromUrl, setLoadedFromUrl] = useState(false);
+  const [customBackendUrl, setCustomBackendUrl] = useState(localStorage.getItem('codelobby_backend_url') || '');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [backendOnline, setBackendOnline] = useState(null); // null = checking, true = online, false = offline
+
+  const getAutoDetectedBackendUrl = () => {
+    return import.meta.env.VITE_BACKEND_URL || (window.location.port ? `${window.location.protocol}//${window.location.hostname}:5000` : window.location.origin);
+  };
+
+  const activeBackendUrl = customBackendUrl.trim() || getAutoDetectedBackendUrl();
+
+  useEffect(() => {
+    setBackendOnline(null);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+    fetch(activeBackendUrl, { method: 'GET', signal: controller.signal })
+      .then(() => setBackendOnline(true))
+      .catch(() => setBackendOnline(false))
+      .finally(() => clearTimeout(timeoutId));
+
+    return () => {
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
+  }, [activeBackendUrl]);
+
+  const checkStatus = () => {
+    setBackendOnline(null);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+    fetch(activeBackendUrl, { method: 'GET', signal: controller.signal })
+      .then(() => setBackendOnline(true))
+      .catch(() => setBackendOnline(false))
+      .finally(() => clearTimeout(timeoutId));
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -36,7 +72,18 @@ export default function RoomLogin({ onJoin }) {
       setError('Workspace/Room ID is required.');
       return;
     }
-    onJoin({ roomId: roomId.trim().toLowerCase(), username: username.trim() });
+
+    if (customBackendUrl.trim()) {
+      localStorage.setItem('codelobby_backend_url', customBackendUrl.trim());
+    } else {
+      localStorage.removeItem('codelobby_backend_url');
+    }
+
+    onJoin({ 
+      roomId: roomId.trim().toLowerCase(), 
+      username: username.trim(),
+      customBackendUrl: customBackendUrl.trim()
+    });
   };
 
   return (
@@ -74,7 +121,7 @@ export default function RoomLogin({ onJoin }) {
         pointerEvents: 'none',
         whiteSpace: 'pre'
       }}>
-        {`[SYSTEM STATUS: ONLINE]\n[THEME: LIGHT_YELLOW]\n[WHITEBOARD: READY]\n[WEBSOCKET: DISCONNECTED]`}
+        {`[SYSTEM STATUS: ${backendOnline === true ? 'ONLINE' : backendOnline === false ? 'OFFLINE' : 'CHECKING'}]\n[THEME: LIGHT_YELLOW]\n[WHITEBOARD: READY]\n[SERVER_URL: ${activeBackendUrl}]`}
       </div>
 
       {/* Main card */}
@@ -166,6 +213,109 @@ export default function RoomLogin({ onJoin }) {
               }}>
                 ✓ Room ID loaded automatically from invitation link!
               </span>
+            )}
+          </div>
+
+          {/* Pre-flight Connectivity Status Badge */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            backgroundColor: '#ffffff',
+            border: '2px dashed #ffd600',
+            padding: '0.5rem 0.8rem',
+            fontSize: '0.75rem',
+            fontWeight: 'bold',
+            borderRadius: '2px',
+            color: '#111111'
+          }}>
+            <span style={{ color: '#555555' }}>Backend Server:</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+              <span style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                backgroundColor: backendOnline === true ? '#00c853' : backendOnline === false ? '#ff4d4d' : '#ffb300',
+                display: 'inline-block'
+              }} />
+              <span style={{
+                color: backendOnline === true ? '#00c853' : backendOnline === false ? '#ff4d4d' : '#ffb300',
+                textTransform: 'uppercase'
+              }}>
+                {backendOnline === true ? 'Online' : backendOnline === false ? 'Offline' : 'Checking...'}
+              </span>
+            </div>
+          </div>
+
+          {/* Advanced Backend Configuration Toggle */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              style={{
+                alignSelf: 'flex-start',
+                background: 'none',
+                border: 'none',
+                color: '#888888',
+                fontSize: '0.75rem',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                textTransform: 'uppercase',
+                textDecoration: 'underline'
+              }}
+            >
+              {showAdvanced ? 'Hide Advanced Settings' : 'Show Advanced Settings'}
+            </button>
+
+            {showAdvanced && (
+              <div style={{
+                backgroundColor: '#ffffff',
+                border: '2px solid #ffd600',
+                padding: '0.8rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.4rem',
+                borderRadius: '2px',
+                animation: 'fadeIn 0.2s ease-out'
+              }}>
+                <label style={{ fontSize: '0.65rem', color: '#111111', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                  Custom Backend Server URL
+                </label>
+                <input
+                  type="text"
+                  className="cyber-input"
+                  placeholder="e.g. https://my-backend.onrender.com"
+                  value={customBackendUrl}
+                  onChange={(e) => setCustomBackendUrl(e.target.value)}
+                  style={{
+                    padding: '0.4rem 0.6rem',
+                    fontSize: '0.75rem',
+                    border: '2px solid #e5e5e5',
+                    color: '#111111'
+                  }}
+                />
+                <span style={{ fontSize: '0.6rem', color: '#888888', fontStyle: 'italic' }}>
+                  Leave blank to auto-detect backend URL.
+                </span>
+                <button
+                  type="button"
+                  onClick={checkStatus}
+                  style={{
+                    alignSelf: 'flex-start',
+                    background: '#111111',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontSize: '0.65rem',
+                    padding: '0.2rem 0.5rem',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    textTransform: 'uppercase',
+                    marginTop: '0.2rem'
+                  }}
+                >
+                  Test Connection
+                </button>
+              </div>
             )}
           </div>
 

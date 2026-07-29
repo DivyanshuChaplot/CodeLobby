@@ -31,6 +31,10 @@ const USER_COLORS = [
   '#FFFDE7'  // Ivory/White
 ];
 
+app.get('/', (req, res) => {
+  res.json({ status: 'online', service: 'CodeLobby Backend' });
+});
+
 app.post('/api/run', (req, res) => {
   const { language, code, stdin } = req.body;
   if (!language || !code) {
