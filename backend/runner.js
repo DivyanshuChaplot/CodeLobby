@@ -160,7 +160,11 @@ function executeProcess(cmd, args, stdin, callback) {
   const child = spawn(cmd, args);
 
   const timeout = setTimeout(() => {
-    child.kill('SIGKILL');
+    if (process.platform === 'win32') {
+      exec(`taskkill /pid ${child.pid} /T /F`, () => {});
+    } else {
+      child.kill('SIGKILL');
+    }
     stderr += '\n[Execution Timeout: Terminated after 5 seconds]';
   }, 5000);
 

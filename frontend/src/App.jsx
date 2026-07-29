@@ -12,6 +12,7 @@ export default function App() {
   const [session, setSession] = useState(null); // { roomId, username }
   const [socket, setSocket] = useState(null);
   const [myId, setMyId] = useState('');
+  const [connectionStatus, setConnectionStatus] = useState('connecting');
   
   // App states synchronized via socket
   const [code, setCode] = useState('');
@@ -170,10 +171,20 @@ export default function App() {
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
+      setConnectionStatus('connected');
       newSocket.emit('join-room', {
         roomId: session.roomId,
         username: session.username
       });
+    });
+
+    newSocket.on('connect_error', (err) => {
+      setConnectionStatus('disconnected');
+      console.error('Socket connection error:', err);
+    });
+
+    newSocket.on('disconnect', () => {
+      setConnectionStatus('disconnected');
     });
 
     newSocket.on('room-init', (data) => {
@@ -277,11 +288,29 @@ export default function App() {
     }
   };
 
-  const copyRoomLink = () => {
+  const copyRoomLink = async () => {
     const inviteUrl = `${window.location.origin}?room=${session.roomId}`;
-    navigator.clipboard.writeText(inviteUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Join my CodeLobby Room',
+          text: `Join my collaborative coding and whiteboard room on CodeLobby (Key: ${session.roomId}):`,
+          url: inviteUrl,
+        });
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Error sharing link:', err);
+        }
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(inviteUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy link:', err);
+      }
+    }
   };
 
   const handleLogout = () => {
@@ -299,13 +328,51 @@ export default function App() {
   }
 
   return (
-    <div className="app-container">
+    <div className="app-container" style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      {connectionStatus === 'disconnected' && (
+        <div style={{
+          backgroundColor: '#ff4d4d',
+          color: '#ffffff',
+          padding: '0.4rem',
+          fontSize: '0.8rem',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          borderBottom: '2px solid #000000',
+          zIndex: 9999
+        }}>
+          ⚠️ Disconnected from CodeLobby backend. Please check if your backend server is running on port 5000 and is reachable!
+        </div>
+      )}
       {/* Sleek Light Cyber Header */}
       <header className="header" style={{ borderBottom: '2px solid #ffd600' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
           <h1 className="logo-text cyber-glow">
             CODE<span>LOBBY</span>
           </h1>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.3rem',
+            backgroundColor: connectionStatus === 'connected' ? 'rgba(0, 200, 83, 0.1)' : connectionStatus === 'connecting' ? 'rgba(255, 179, 0, 0.1)' : 'rgba(255, 77, 77, 0.1)',
+            border: `1.5px solid ${connectionStatus === 'connected' ? '#00c853' : connectionStatus === 'connecting' ? '#ffb300' : '#ff4d4d'}`,
+            padding: '0.2rem 0.5rem',
+            borderRadius: '2px',
+            fontSize: '0.65rem',
+            fontWeight: 'bold',
+            color: connectionStatus === 'connected' ? '#00c853' : connectionStatus === 'connecting' ? '#ffb300' : '#ff4d4d',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}>
+            <span style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: connectionStatus === 'connected' ? '#00c853' : connectionStatus === 'connecting' ? '#ffb300' : '#ff4d4d',
+              display: 'inline-block',
+              animation: connectionStatus === 'connected' ? 'none' : 'pulse 1.2s infinite'
+            }} />
+            {connectionStatus}
+          </div>
         </div>
 
         {/* Room actions & call indicators */}
